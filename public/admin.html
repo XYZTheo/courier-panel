@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Courier</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/admin.css" />
+</head>
+<body>
+  <div class="admin-app">
+    <header class="topbar">
+      <h1>🎛 Courier Panel — Admin</h1>
+      <a href="/" target="_blank" class="view-link">Open live page ↗</a>
+    </header>
+
+    <div class="grid">
+      <!-- Company -->
+      <section class="card">
+        <h2>Company</h2>
+        <div class="company-grid" id="companyGrid"></div>
+        <div class="field-row">
+          <label>Name</label>
+          <input id="brandName" type="text" placeholder="Company name" />
+        </div>
+        <div class="field-row colors">
+          <label>Primary <input id="brandPrimary" type="color" /></label>
+          <label>Accent <input id="brandAccent" type="color" /></label>
+          <button id="applyBrand" class="btn">Apply</button>
+        </div>
+        <div class="field-row">
+          <label>Theme</label>
+          <select id="brandTheme"><option value="dark">dark</option><option value="light">light</option></select>
+        </div>
+      </section>
+
+      <!-- Client -->
+      <section class="card">
+        <h2>Client</h2>
+        <div class="field-row"><label>Name</label><input id="cName" type="text" /></div>
+        <div class="field-row"><label>Address</label><input id="cAddress" type="text" /></div>
+        <div class="field-row"><label>City</label><input id="cCity" type="text" /></div>
+        <div class="field-row"><label>Phone</label><input id="cPhone" type="text" /></div>
+        <button id="saveClient" class="btn">Save</button>
+      </section>
+
+      <!-- Courier -->
+      <section class="card">
+        <h2>Courier</h2>
+        <div class="field-row"><label>Name</label><input id="crName" type="text" /></div>
+        <div class="field-row"><label>Vehicle</label><input id="crVehicle" type="text" /></div>
+        <div class="field-row"><label>Rating</label><input id="crRating" type="text" /></div>
+        <div class="field-row"><label>Phone</label><input id="crPhone" type="text" /></div>
+        <button id="saveCourier" class="btn">Save</button>
+      </section>
+
+      <!-- Representative -->
+      <section class="card">
+        <h2>Representative</h2>
+        <div class="field-row"><label>Name</label><input id="rName" type="text" /></div>
+        <div class="field-row"><label>Number</label><input id="rNumber" type="text" /></div>
+        <div class="field-row"><label>Extension</label><input id="rExt" type="text" /></div>
+        <button id="saveRep" class="btn">Save</button>
+      </section>
+
+      <!-- Order -->
+      <section class="card">
+        <h2>Order</h2>
+        <div class="field-row"><label>Items</label><input id="oItems" type="text" /></div>
+        <div class="field-row"><label>Note</label><input id="oNote" type="text" /></div>
+        <button id="saveOrder" class="btn">Save</button>
+      </section>
+
+      <!-- Status -->
+      <section class="card">
+        <h2>Status & ETA</h2>
+        <div class="field-row"><label>Status message</label><textarea id="statusMsg" rows="2"></textarea></div>
+        <button id="saveStatus" class="btn">Save</button>
+        <hr />
+        <div class="status-flow" id="statusFlow"></div>
+        <button id="advanceStatus" class="btn">Advance ▶</button>
+        <hr />
+        <div class="field-row"><label>ETA (min)</label><input id="etaMin" type="number" /></div>
+        <button id="setEta" class="btn">Set ETA</button>
+        <button id="etaAuto" class="btn ghost">Auto</button>
+      </section>
+
+      <!-- Uber -->
+      <section class="card">
+        <h2>Uber Link</h2>
+        <div class="field-row"><label>URL</label><input id="uberUrl" type="text" /></div>
+        <button id="saveUber" class="btn">Save</button>
+      </section>
+
+      <!-- Map / Route -->
+      <section class="card">
+        <h2>Map</h2>
+        <div class="field-row"><label>Move courier to address</label><input id="moveAddr" type="text" placeholder="350 Fifth Ave, New York" /></div>
+        <button id="doMove" class="btn">Move</button>
+        <div class="field-row"><label>Set destination & start route</label><input id="routeAddr" type="text" placeholder="1 Market St, San Francisco" /></div>
+        <button id="doRoute" class="btn">Set Route</button>
+        <hr />
+        <div class="field-row">
+          <label>Simulation speed: <span id="speedLabel">2.0s</span></label>
+          <input id="simSpeed" type="range" min="500" max="10000" step="500" value="2000" />
+        </div>
+        <div class="btn-row">
+          <button id="simToggle" class="btn">⏸ Pause sim</button>
+          <button id="simStep" class="btn ghost">Step ▶</button>
+        </div>
+      </section>
+
+      <!-- Section toggles -->
+      <section class="card">
+        <h2>Page Sections</h2>
+        <div class="presets">
+          <button data-preset="all" class="chip">All on</button>
+          <button data-preset="minimal" class="chip">Minimal</button>
+          <button data-preset="investor" class="chip">Investor</button>
+        </div>
+        <div class="toggles" id="toggles"></div>
+      </section>
+
+      <!-- Demo & Actions -->
+      <section class="card">
+        <h2>Demo & Actions</h2>
+        <div class="btn-row">
+          <button id="runDemo" class="btn big">🎬 Run demo</button>
+          <button id="stopDemo" class="btn ghost big">⏹ Stop</button>
+        </div>
+        <hr />
+        <button id="newOrder" class="btn">🆕 New order</button>
+        <hr />
+        <div class="field-row"><label>Push alert to page</label><input id="alertText" type="text" placeholder="Your courier is 2 min away" /></div>
+        <button id="sendAlert" class="btn">📢 Push</button>
+      </section>
+    </div>
+
+    <div id="toast" class="toast"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/admin.js"></script>
+</body>
+</html>
