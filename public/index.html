@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Courier Tracking</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app" id="app">
+    <!-- Representative bar -->
+    <section class="rep-bar" id="repBar">
+      <div class="rep-avatar" id="repAvatar">D</div>
+      <div class="rep-info">
+        <div class="rep-label">Your representative</div>
+        <div class="rep-name" id="repName">—</div>
+      </div>
+      <a class="rep-call" id="repCall" href="#">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.5.6 3.6.1.4 0 .8-.3 1l-2.2 2.2z"/></svg>
+        <span id="repNumber">—</span>
+      </a>
+    </section>
+
+    <!-- Top brand bar -->
+    <header class="topbar">
+      <div class="brand">
+        <img id="brandLogo" src="" alt="logo" class="brand-logo" />
+        <div class="brand-name" id="brandName">—</div>
+      </div>
+      <div class="status-pill" id="statusPill">
+        <span class="dot"></span>
+        <span id="statusText">Live</span>
+      </div>
+      <div class="demo-pill" id="demoPill" hidden>DEMO</div>
+    </header>
+
+    <!-- Map -->
+    <section class="map-wrap" id="mapSection">
+      <div id="map"></div>
+      <div class="eta-badge" id="etaBadge">— min</div>
+    </section>
+
+    <!-- Status banner -->
+    <section class="status-banner">
+      <div class="status-title" id="tripStatus">Courier assigned</div>
+      <div class="status-msg" id="statusMessage">Your courier has been assigned.</div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </section>
+
+    <!-- Status timeline -->
+    <section class="card timeline-card" id="timelineSection">
+      <div class="timeline" id="timeline"></div>
+    </section>
+
+    <!-- Courier card -->
+    <section class="card courier-card" id="courierCard">
+      <div class="courier-avatar" id="courierAvatar">M</div>
+      <div class="courier-info">
+        <div class="courier-name" id="courierName">—</div>
+        <div class="courier-meta">
+          <span id="courierVehicle">—</span>
+          <span class="sep">•</span>
+          <span class="rating" id="courierRating">★ —</span>
+        </div>
+      </div>
+      <a class="icon-btn call-btn" id="callCourier" href="#" title="Call courier">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.5.6 3.6.1.4 0 .8-.3 1l-2.2 2.2z"/></svg>
+      </a>
+      <a class="uber-btn" id="uberLink" href="#" target="_blank" rel="noopener">
+        Open Uber
+      </a>
+    </section>
+
+    <!-- Client info -->
+    <section class="card client-card" id="clientCard">
+      <div class="row">
+        <div class="label">Tracking ID</div>
+        <div class="value" id="trackingId">—</div>
+      </div>
+      <div class="row">
+        <div class="label">Recipient</div>
+        <div class="value" id="clientName">—</div>
+      </div>
+      <div class="row">
+        <div class="label">Delivery to</div>
+        <div class="value" id="clientAddress">—</div>
+      </div>
+      <div class="row">
+        <div class="label">Phone</div>
+        <div class="value" id="clientPhone">—</div>
+      </div>
+    </section>
+
+    <!-- Order details -->
+    <section class="card order-card" id="orderCard">
+      <div class="row">
+        <div class="label">Package</div>
+        <div class="value" id="orderItems">—</div>
+      </div>
+      <div class="row">
+        <div class="label">Note</div>
+        <div class="value" id="orderNote">—</div>
+      </div>
+    </section>
+
+    <!-- Delivery code -->
+    <section class="card code-card" id="deliveryCodeSection">
+      <div class="code-label">Give this code to your courier</div>
+      <div class="code-value" id="deliveryCode">—</div>
+      <div class="code-hint">Tracking ID <span id="trackingId2">—</span></div>
+    </section>
+
+    <!-- Instructions -->
+    <section class="card instructions" id="instructionsSection">
+      <div class="card-title">Before the courier arrives</div>
+      <ol class="steps">
+        <li>Have a valid ID ready for verification.</li>
+        <li>Make sure someone is available at the delivery address.</li>
+        <li>Tap “Open Uber” above to hand off via the Uber courier app.</li>
+        <li>Keep this page open for live updates.</li>
+      </ol>
+    </section>
+
+    <footer class="footer">Powered by <span id="footerBrand">—</span> • Live tracking via Uber Courier</footer>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+node_modules/
+.env
+public/logos/uploaded_*
+public/logos/live_*
+*.log
+state.json

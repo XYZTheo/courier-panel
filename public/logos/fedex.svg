@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <rect width="160" height="160" rx="28" fill="#ffffff"/>
+  <rect x="3" y="3" width="154" height="154" rx="26" fill="none" stroke="#4D148C" stroke-width="3"/>
+  <text x="84" y="95" font-family="Arial Black, Arial, sans-serif" font-size="34" font-weight="900" text-anchor="middle" letter-spacing="-1">
+    <tspan fill="#4D148C">Fed</tspan><tspan fill="#FF6600">Ex</tspan>
+  </text>
+  <text x="84" y="120" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#4D148C" text-anchor="middle" letter-spacing="3">EXPRESS</text>
+</svg>

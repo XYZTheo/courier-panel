@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <rect width="160" height="160" rx="28" fill="#351C15"/>
+  <path d="M80 28 L122 54 L122 94 C122 116 102 132 80 138 C58 132 38 116 38 94 L38 54 Z" fill="#FFB500"/>
+  <path d="M80 40 L112 60 L112 94 C112 110 98 122 80 126 C62 122 48 110 48 94 L48 60 Z" fill="none" stroke="#351C15" stroke-width="2.5" opacity="0.25"/>
+  <text x="80" y="96" font-family="Arial Black, Arial, sans-serif" font-size="28" font-weight="900" fill="#351C15" text-anchor="middle" letter-spacing="-1">UPS</text>
+  <text x="80" y="114" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#351C15" text-anchor="middle" letter-spacing="1">DELIVERY</text>
+</svg>

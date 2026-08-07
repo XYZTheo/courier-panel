@@ -1,0 +1,93 @@
+[
+  {
+    "id": "UPS",
+    "name": "UPS",
+    "logo": "/logos/live_UPS.jpg",
+    "primary": "#351C15",
+    "site": "https://www.ups.com",
+    "theme": "dark",
+    "bg": "radial-gradient(120% 80% at 50% -10%, #26140f 0%, #190d0a 55%, #100806 100%)",
+    "accent": "#65524d",
+    "surface": "rgba(21, 11, 8, 0.78)",
+    "surface2": "rgba(28, 15, 11, 0.78)",
+    "border": "rgba(37, 20, 15, 0.45)"
+  },
+  {
+    "id": "FEDEX",
+    "name": "FedEx Global Home",
+    "logo": "/logos/live_FEDEX.ico",
+    "primary": "#4D148C",
+    "site": "https://www.fedex.com",
+    "theme": "dark",
+    "bg": "radial-gradient(120% 80% at 50% -10%, #370e65 0%, #250a43 55%, #17062a 100%)",
+    "accent": "#784ca8",
+    "surface": "rgba(31, 8, 56, 0.78)",
+    "surface2": "rgba(40, 10, 73, 0.78)",
+    "border": "rgba(54, 14, 98, 0.45)"
+  },
+  {
+    "id": "BOA",
+    "name": "Bank of America",
+    "logo": "/logos/live_BOA.png",
+    "primary": "#e31837",
+    "site": "https://www.bankofamerica.com",
+    "theme": "dark",
+    "bg": "radial-gradient(120% 80% at 50% -10%, #a31128 0%, #6d0c1a 55%, #440711 100%)",
+    "accent": "#ea4f67",
+    "surface": "rgba(91, 10, 22, 0.78)",
+    "surface2": "rgba(118, 12, 29, 0.78)",
+    "border": "rgba(159, 17, 39, 0.45)"
+  },
+  {
+    "id": "DHL",
+    "name": "DHL",
+    "logo": "/logos/live_DHL.jpg",
+    "primary": "#D40511",
+    "site": "https://www.dhl.com",
+    "theme": "dark",
+    "bg": "radial-gradient(120% 80% at 50% -10%, #99040c 0%, #660208 55%, #400205 100%)",
+    "accent": "#de414a",
+    "surface": "rgba(85, 2, 7, 0.78)",
+    "surface2": "rgba(110, 3, 9, 0.78)",
+    "border": "rgba(148, 4, 12, 0.45)"
+  },
+  {
+    "id": "NFCU",
+    "name": "Navy Federal Credit Union",
+    "logo": "/logos/live_NFCU.ico",
+    "primary": "#004B27",
+    "site": "https://www.navyfederal.org",
+    "theme": "dark",
+    "bg": "radial-gradient(120% 80% at 50% -10%, #00361c 0%, #002413 55%, #00170c 100%)",
+    "accent": "#3d765b",
+    "surface": "rgba(0, 30, 16, 0.78)",
+    "surface2": "rgba(0, 39, 20, 0.78)",
+    "border": "rgba(0, 53, 27, 0.45)"
+  },
+  {
+    "id": "PNC",
+    "name": "PNC Bank",
+    "logo": "/logos/live_PNC.png",
+    "primary": "#f58024",
+    "site": "https://www.pnc.com",
+    "theme": "dark",
+    "bg": "radial-gradient(120% 80% at 50% -10%, #b05c1a 0%, #763d11 55%, #4a260b 100%)",
+    "accent": "#f79e59",
+    "surface": "rgba(98, 51, 14, 0.78)",
+    "surface2": "rgba(127, 67, 19, 0.78)",
+    "border": "rgba(172, 90, 25, 0.45)"
+  },
+  {
+    "id": "CHASE",
+    "name": "Chase",
+    "logo": "/logos/live_CHASE.png",
+    "primary": "#0050b3",
+    "site": "https://www.chase.com",
+    "theme": "dark",
+    "bg": "radial-gradient(120% 80% at 50% -10%, #003a81 0%, #002656 55%, #001836 100%)",
+    "accent": "#3d7ac5",
+    "surface": "rgba(0, 32, 72, 0.78)",
+    "surface2": "rgba(0, 42, 93, 0.78)",
+    "border": "rgba(0, 56, 125, 0.45)"
+  }
+]

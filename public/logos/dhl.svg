@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">
+  <rect width="160" height="160" rx="28" fill="#FFCC00"/>
+  <text x="80" y="95" font-family="Arial Black, Arial, sans-serif" font-size="38" font-weight="900" fill="#D40511" text-anchor="middle" letter-spacing="-1">DHL</text>
+  <rect x="30" y="110" width="100" height="6" fill="#D40511"/>
+  <text x="80" y="130" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#D40511" text-anchor="middle" letter-spacing="3">EXPRESS</text>
+</svg>
