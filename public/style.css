@@ -323,11 +323,18 @@ body.theme-light .eta-badge { background: rgba(255,255,255,0.85); color: #131318
 .leaflet-control-attribution { font-size: 9px !important; }
 
 /* ---------- Map markers ---------- */
-.courier-icon .cm-dot {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: var(--primary);
-  border: 3px solid #fff;
-  box-shadow: 0 0 0 4px rgba(31,186,214,0.35);
+.courier-car {
+  background: transparent !important;
+  border: none !important;
+}
+.car-wrap {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  transform-origin: center;
+  transition: transform 0.4s ease-out;
+}
+.car-wrap svg {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
 }
 .dest-icon .dm-pin {
   width: 24px; height: 24px; border-radius: 50% 50% 50% 0;

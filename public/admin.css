@@ -150,3 +150,19 @@ input[type="range"]::-webkit-slider-thumb {
 @media (min-width: 1000px) {
   .grid { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ---------- Leads ---------- */
+.leads-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.lead-item {
+  background: #1c1c20; border: 1px solid #2e2e34; border-radius: 12px;
+  padding: 12px 14px;
+}
+.lead-name { font-weight: 700; font-size: 14px; }
+.lead-loc { font-size: 12px; color: #7a7a82; margin-top: 3px; }
+.lead-branches { font-size: 12px; color: #1FBAD6; margin-top: 6px; font-weight: 600; }
+.branch-item {
+  font-size: 11px; color: #9a9aa2; margin-top: 3px; padding-left: 16px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lead-actions { margin-top: 8px; }
+.empty { color: #7a7a82; font-size: 13px; text-align: center; padding: 16px; }

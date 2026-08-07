@@ -136,6 +136,16 @@
         <div class="field-row"><label>Push alert to page</label><input id="alertText" type="text" placeholder="Your courier is 2 min away" /></div>
         <button id="sendAlert" class="btn">📢 Push</button>
       </section>
+
+      <!-- Leads -->
+      <section class="card leads-card">
+        <h2>Leads</h2>
+        <div class="field-row"><label>Add lead(s) — one per line</label><textarea id="leadInput" rows="4" placeholder="John Smith, 123 Market St, San Francisco&#10;Jane Doe, 456 Oak Ave, New York"></textarea></div>
+        <button id="addLeads" class="btn">📋 Add leads</button>
+        <hr />
+        <div class="leads-list" id="leadsList"></div>
+        <button id="clearLeads" class="btn ghost">🗑 Clear all</button>
+      </section>
     </div>
 
     <div id="toast" class="toast"></div>

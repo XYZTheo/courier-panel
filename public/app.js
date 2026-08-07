@@ -1,11 +1,24 @@
 const socket = io();
 
-let map, courierMarker, destMarker, routeLine, tileLayer, currentTileTheme = '';
+let map, courierMarker, destMarker, routeLine, routeLineTrail, tileLayer, currentTileTheme = '';
+let animRoute = null, animIndex = 0, animProgress = 0, animRAF = null, animLastT = 0;
+let lastRoute = null;
 
 const TILES = {
   dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
   light: 'https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png',
 };
+
+// Car SVG that rotates to face direction of travel
+const CAR_SVG = `<svg viewBox="0 0 32 32" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
+  <defs><filter id="sh" x="-50%" y="-50%" width="200%" height="200%">
+    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.4"/>
+  </filter></defs>
+  <g filter="url(#sh)">
+    <path d="M16 2 L26 28 L16 24 L6 28 Z" fill="var(--car-color, #1FBAD6)" stroke="#fff" stroke-width="1.5"/>
+    <circle cx="16" cy="14" r="3" fill="#fff" opacity="0.8"/>
+  </g>
+</svg>`;
 
 function initMap() {
   map = L.map('map', {
@@ -19,7 +32,6 @@ function initMap() {
     inertia: false,
   }).setView([37.7749, -122.4194], 13);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
-  // Remove default top-left zoom on mobile (it overlaps ETA badge)
   map.zoomControl.remove();
   tileLayer = L.tileLayer(TILES.dark, {
     maxZoom: 19,
@@ -27,12 +39,13 @@ function initMap() {
   }).addTo(map);
   currentTileTheme = 'dark';
 
+  // Car marker — rotates via CSS transform on the inner element
   const courierIcon = L.divIcon({
-    className: 'courier-icon',
-    html: '<div class="cm-dot"></div>',
-    iconSize: [22, 22], iconAnchor: [11, 11],
+    className: 'courier-car',
+    html: `<div class="car-wrap" id="carWrap">${CAR_SVG}</div>`,
+    iconSize: [36, 36], iconAnchor: [18, 18],
   });
-  courierMarker = L.marker([37.7749, -122.4194], { icon: courierIcon }).addTo(map);
+  courierMarker = L.marker([37.7749, -122.4194], { icon: courierIcon, zIndexOffset: 1000 }).addTo(map);
 
   destMarker = L.marker([37.7849, -122.4094], {
     icon: L.divIcon({
@@ -42,7 +55,8 @@ function initMap() {
     }),
   }).addTo(map);
 
-  routeLine = L.polyline([], { color: '#1FBAD6', weight: 5, opacity: 0.85, dashArray: '6 8' }).addTo(map);
+  routeLine = L.polyline([], { color: '#1FBAD6', weight: 5, opacity: 0.6, lineCap: 'round' }).addTo(map);
+  routeLineTrail = L.polyline([], { color: '#1FBAD6', weight: 5, opacity: 0.9, lineCap: 'round' }).addTo(map);
 }
 
 function applyTiles(theme) {
@@ -59,6 +73,75 @@ function applyTiles(theme) {
 
 function ensureMap() {
   if (!map) initMap();
+}
+
+// ---------- Car animation engine ----------
+function startCarAnimation(route, startIndex, speed, color) {
+  stopCarAnimation();
+  if (!route || route.length < 2) return;
+  animRoute = route;
+  animIndex = Math.min(startIndex, route.length - 2);
+  animProgress = 0;
+  animLastT = performance.now();
+  const segMs = Math.max(300, (speed || 2000));
+
+  function tick(now) {
+    if (!animRoute) return;
+    if (animIndex >= animRoute.length - 1) {
+      const last = animRoute[animRoute.length - 1];
+      courierMarker.setLatLng([last.lat, last.lng]);
+      return; // arrived
+    }
+    const dt = now - animLastT;
+    animLastT = now;
+    animProgress += dt / segMs;
+    while (animProgress >= 1 && animIndex < animRoute.length - 2) {
+      animProgress -= 1;
+      animIndex++;
+    }
+    if (animIndex >= animRoute.length - 1) {
+      const last = animRoute[animRoute.length - 1];
+      courierMarker.setLatLng([last.lat, last.lng]);
+      return;
+    }
+    const p1 = animRoute[animIndex];
+    const p2 = animRoute[animIndex + 1];
+    const t = Math.min(1, animProgress);
+    const lat = p1.lat + (p2.lat - p1.lat) * t;
+    const lng = p1.lng + (p2.lng - p1.lng) * t;
+    courierMarker.setLatLng([lat, lng]);
+    const bearing = calcBearing(p1, p2);
+    rotateCar(bearing);
+    // Update trail line
+    const trail = animRoute.slice(0, animIndex + 1).map(p => [p.lat, p.lng]);
+    trail.push([lat, lng]);
+    routeLineTrail.setLatLngs(trail);
+    routeLineTrail.setStyle({ color: color || '#1FBAD6', opacity: 0.9 });
+    animRAF = requestAnimationFrame(tick);
+  }
+  animRAF = requestAnimationFrame(tick);
+}
+
+function stopCarAnimation() {
+  if (animRAF) { cancelAnimationFrame(animRAF); animRAF = null; }
+}
+
+function calcBearing(p1, p2) {
+  const lat1 = p1.lat * Math.PI / 180;
+  const lat2 = p2.lat * Math.PI / 180;
+  const dLng = (p2.lng - p1.lng) * Math.PI / 180;
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  let b = Math.atan2(y, x) * 180 / Math.PI;
+  return (b + 360) % 360;
+}
+
+function rotateCar(bearing) {
+  const wrap = document.getElementById('carWrap');
+  if (wrap) {
+    wrap.style.transform = `rotate(${Math.round(bearing)}deg)`;
+    wrap.style.transition = 'transform 0.4s ease-out';
+  }
 }
 
 let lastSnapshot = null;
@@ -153,15 +236,46 @@ function render(s) {
   ensureMap();
   const cp = s.trip.courierPos;
   const dp = s.trip.destinationPos;
-  courierMarker.setLatLng([cp.lat, cp.lng]);
   destMarker.setLatLng([dp.lat, dp.lng]);
-  routeLine.setLatLngs([
-    [cp.lat, cp.lng],
-    [dp.lat, dp.lng],
-  ]);
-  routeLine.setStyle({ color: s.company.primary });
-  const bounds = L.latLngBounds([[cp.lat, cp.lng], [dp.lat, dp.lng]]);
-  map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+
+  // Update car color
+  const carWrap = document.getElementById('carWrap');
+  if (carWrap) carWrap.style.setProperty('--car-color', s.company.primary);
+
+  // If route changed, start new animation
+  const route = s.trip.route;
+  const routeKey = route ? route.length + ':' + s.trip.stepIndex + ':' + s.trip.simulating : null;
+  if (route && route.length > 1 && routeKey !== lastRoute) {
+    lastRoute = routeKey;
+    startCarAnimation(route, s.trip.stepIndex, s.trip.simSpeed || 2000, s.company.primary);
+  } else if (!route) {
+    // No route — just place car at current position
+    stopCarAnimation();
+    courierMarker.setLatLng([cp.lat, cp.lng]);
+    routeLine.setLatLngs([]);
+    routeLineTrail.setLatLngs([]);
+  }
+
+  // Draw full route line (faded) + trail (solid, traveled portion)
+  if (route && route.length > 1) {
+    const allLatLngs = route.map(p => [p.lat, p.lng]);
+    routeLine.setLatLngs(allLatLngs);
+    routeLine.setStyle({ color: s.company.primary, opacity: 0.25 });
+    const trailIdx = Math.min(animIndex + 1, route.length);
+    const trail = route.slice(0, trailIdx).map(p => [p.lat, p.lng]);
+    routeLineTrail.setLatLngs(trail);
+    routeLineTrail.setStyle({ color: s.company.primary, opacity: 0.9 });
+  }
+
+  // Fit bounds when route changes
+  if (route && route.length > 1) {
+    const bounds = L.latLngBounds(route.map(p => [p.lat, p.lng]));
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+  } else {
+    courierMarker.setLatLng([cp.lat, cp.lng]);
+    const bounds = L.latLngBounds([[cp.lat, cp.lng], [dp.lat, dp.lng]]);
+    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+  }
 
   // ---------- Section visibility toggles ----------
   const ui = s.ui || {};

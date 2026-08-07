@@ -115,5 +115,46 @@ document.querySelectorAll('[data-preset]').forEach(b => {
   b.onclick = () => api({ action:'uiPreset', preset:b.dataset.preset }).then(r => toast('Preset: '+b.dataset.preset));
 });
 
-socket.on('state', render);
-fetch('/api/state').then(r => r.json()).then(render);
+// ---- Leads ----
+$('addLeads').onclick = async () => {
+  const text = $('leadInput').value.trim();
+  if (!text) return toast('Enter at least one lead', true);
+  toast('Processing leads...');
+  const r = await fetch('/api/leads/add', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ text }) });
+  const j = await r.json();
+  if (j.ok) { toast(`Added ${j.added} lead(s)`); $('leadInput').value=''; }
+  else toast('Failed: '+(j.error||''), true);
+};
+$('clearLeads').onclick = async () => {
+  await fetch('/api/leads/clear', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+  toast('Leads cleared');
+};
+
+function renderLeads(leads) {
+  const el = $('leadsList');
+  if (!el) return;
+  if (!leads || !leads.length) { el.innerHTML = '<p class="empty">No leads yet</p>'; return; }
+  el.innerHTML = leads.map((l, i) => {
+    const branches = l.branches && l.branches.length
+      ? `<div class="lead-branches">📍 ${l.branches.length} nearby branches:</div>` +
+        l.branches.slice(0,3).map(b => `<div class="branch-item">${b.name}</div>`).join('')
+      : '';
+    return `<div class="lead-item">
+      <div class="lead-name">${l.fullName}</div>
+      ${l.location ? `<div class="lead-loc">${l.locationDisplay || l.location}</div>` : ''}
+      ${branches}
+      <div class="lead-actions">
+        <button class="chip" onclick="activateLead(${i})">Set as client</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.activateLead = async (i) => {
+  const r = await fetch('/api/leads/'+i+'/activate', { method:'POST', headers:{'Content-Type':'application/json'}, body:'{}' });
+  const j = await r.json();
+  toast(j.ok ? 'Lead activated as client' : 'Failed', !j.ok);
+};
+
+socket.on('state', (s) => { render(s); renderLeads(s.leads); });
+fetch('/api/state').then(r => r.json()).then(s => { render(s); renderLeads(s.leads); });

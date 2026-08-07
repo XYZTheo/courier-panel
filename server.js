@@ -83,6 +83,7 @@ function defaultState() {
       callCourier: true,
       rep: true,
     },
+    leads: [],
     trip: {
       status: 'Courier assigned',
       statusMessage: 'Your courier has been assigned and is preparing to pick up your package.',
@@ -116,6 +117,7 @@ function loadState() {
       order: { ...base.order, ...(saved.order || {}) },
       rep: { ...base.rep, ...(saved.rep || {}) },
       ui: { ...base.ui, ...(saved.ui || {}) },
+      leads: saved.leads || [],
       trip: { ...base.trip, ...(saved.trip || {}) },
     };
     // ensure company still exists in companies.json (brand may have been renamed)
@@ -151,6 +153,78 @@ async function geocode(address) {
   } finally {
     clearTimeout(t);
   }
+}
+
+// ---------------- Lead parser ----------------
+// Parses free-text lead entries: detects first/last name + location.
+function parseLead(text) {
+  const t = text.trim();
+  if (!t) return null;
+  // Try comma-separated: "John Smith, 123 Main St, San Francisco CA"
+  const parts = t.split(',').map(s => s.trim()).filter(Boolean);
+  let name = null, location = null;
+  if (parts.length >= 2) {
+    name = parts[0];
+    location = parts.slice(1).join(', ');
+  } else {
+    // Try "Name from/at/in/near Location"
+    const m = t.match(/^([A-Z][a-z]+(?:\s+[A-Z][a-z]+))\s+(?:from|at|in|near|@)\s+(.+)$/i);
+    if (m) { name = m[1]; location = m[2]; }
+    else {
+      // Try two capitalized words + rest
+      const m2 = t.match(/^([A-Z][a-z]+ [A-Z][a-z]+)\s+(.+)$/);
+      if (m2) { name = m2[1]; location = m2[2]; }
+      else { name = t; location = ''; }
+    }
+  }
+  // Split name into first/last
+  const nameParts = name.split(/\s+/);
+  const firstName = nameParts[0] || '';
+  const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : '';
+  return { firstName, lastName, fullName: name, location, raw: t, branches: null, lat: null, lng: null };
+}
+
+// Find nearby branches of the current company near a location using Nominatim.
+async function findNearbyBranches(companyName, location, limit) {
+  const q = `${companyName} near ${location}`;
+  const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=' + (limit || 5) + '&q=' + encodeURIComponent(q);
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), 10000);
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': 'courier-panel/1.0' }, signal: ctrl.signal });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    return data.map((d) => ({
+      name: d.display_name,
+      lat: parseFloat(d.lat),
+      lng: parseFloat(d.lon),
+      type: d.type,
+    }));
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+// Process a bulk lead entry (multiple lines), geocoding + finding branches.
+async function processLeads(text, companyName) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const results = [];
+  for (const line of lines) {
+    const lead = parseLead(line);
+    if (!lead) continue;
+    if (lead.location) {
+      try {
+        const geo = await geocode(lead.location);
+        lead.lat = geo.lat; lead.lng = geo.lng;
+        lead.locationDisplay = geo.display;
+      } catch (e) { lead.locationDisplay = lead.location; }
+      try {
+        lead.branches = await findNearbyBranches(companyName, lead.location, 5);
+      } catch (e) { lead.branches = []; }
+    }
+    results.push(lead);
+  }
+  return results;
 }
 
 // ---------------- Global live state ----------------
@@ -201,6 +275,7 @@ function snapshot() {
     courier: { ...state.courier, eta },
     order: state.order,
     rep: state.rep,
+    leads: state.leads || [],
     ui: state.ui,
     trip: {
       status: state.trip.status,
@@ -208,6 +283,10 @@ function snapshot() {
       uberLink: state.trip.uberLink,
       courierPos: state.trip.courierPos,
       destinationPos: state.trip.destinationPos,
+      route: state.trip.route || null,
+      stepIndex: state.trip.stepIndex,
+      simulating: state.trip.simulating,
+      simSpeed: state.trip.simSpeed,
       flowIndex: state.trip.flowIndex,
       deliveryCode: state.trip.deliveryCode,
       demoRunning: !!state.trip.demoRunning,
@@ -401,9 +480,9 @@ app.post('/api/admin/update', (req, res) => {
         return;
       }
       case 'routeAddress': {
-        geocode(b.address).then((r) => {
+        geocode(b.address).then(async (r) => {
           state.trip.destinationPos = { lat: r.lat, lng: r.lng };
-          state.trip.route = buildRouteN(state.trip.courierPos, state.trip.destinationPos, 12);
+          state.trip.route = await buildRoadRoute(state.trip.courierPos, state.trip.destinationPos);
           state.trip.stepIndex = 0;
           state.trip.simulating = true;
           state.trip.etaAuto = true;
@@ -425,6 +504,39 @@ app.post('/api/admin/update', (req, res) => {
 
 // Serve the admin page
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+
+// Lead management API
+app.post('/api/leads/add', async (req, res) => {
+  try {
+    const text = (req.body && req.body.text) || '';
+    const companyName = state.company ? state.company.name : '';
+    const newLeads = await processLeads(text, companyName);
+    state.leads = (state.leads || []).concat(newLeads);
+    broadcastUpdate();
+    res.json({ ok: true, added: newLeads.length, leads: newLeads });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+app.post('/api/leads/clear', (req, res) => {
+  state.leads = [];
+  broadcastUpdate();
+  res.json({ ok: true });
+});
+app.post('/api/leads/:id/activate', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const lead = state.leads && state.leads[id];
+  if (!lead) return res.status(404).json({ ok: false, error: 'Lead not found' });
+  // Set this lead as the current client + set destination
+  state.client.name = lead.fullName;
+  if (lead.lat && lead.lng) {
+    state.trip.destinationPos = { lat: lead.lat, lng: lead.lng };
+    state.client.address = lead.location || '';
+    state.client.city = lead.locationDisplay || lead.location || '';
+  }
+  broadcastUpdate();
+  res.json({ ok: true });
+});
 
 io.on('connection', (socket) => {
   socket.emit('state', snapshot());
@@ -508,6 +620,10 @@ function sendMenu(chatId, text) {
       ],
       [
         { text: '📢 Push alert', callback_data: 'edit:alert' },
+        { text: '📋 Leads', callback_data: 'edit:leads' },
+      ],
+      [
+        { text: '🗑 Clear leads', callback_data: 'clear_leads' },
         { text: '📋 Show panel', callback_data: 'show_state' },
       ],
       [
@@ -597,7 +713,7 @@ const WIZARDS = {
       { key: 'address', label: 'delivery address (e.g. "1 Market Street, San Francisco")', apply: async (v, chatId) => {
         const r = await geocode(v);
         state.trip.destinationPos = { lat: r.lat, lng: r.lng };
-        state.trip.route = buildRouteN(state.trip.courierPos, state.trip.destinationPos, 12);
+        state.trip.route = await buildRoadRoute(state.trip.courierPos, state.trip.destinationPos);
         state.trip.stepIndex = 0;
         state.trip.simulating = true;
         state.trip.etaAuto = true;
@@ -612,6 +728,27 @@ const WIZARDS = {
     fields: [
       { key: 'text', label: 'alert message to push to the client page', apply: (v) => {
         io.emit('alert', { text: v, ts: Date.now() }); return true;
+      } },
+    ],
+  },
+  leads: {
+    title: '📋 Add Leads',
+    fields: [
+      { key: 'leads', label: 'lead(s) — one per line:\nJohn Smith, 123 Market St, San Francisco\nJane Doe, 456 Oak Ave, New York', apply: async (v, chatId) => {
+        const companyName = state.company ? state.company.name : '';
+        const newLeads = await processLeads(v, companyName);
+        state.leads = (state.leads || []).concat(newLeads);
+        broadcastUpdate();
+        if (chatId) {
+          let msg = `✅ Added ${newLeads.length} lead(s):\n`;
+          newLeads.forEach((l, i) => {
+            msg += `\n${i+1}. ${l.fullName}`;
+            if (l.location) msg += ` — ${l.locationDisplay || l.location}`;
+            if (l.branches && l.branches.length) msg += `\n   📍 ${l.branches.length} nearby ${companyName} branches found`;
+          });
+          bot.sendMessage(chatId, msg);
+        }
+        return true;
       } },
     ],
   },
@@ -817,11 +954,16 @@ if (bot) {
       case 'simulate_toggle':
         state.trip.simulating = !state.trip.simulating;
         if (state.trip.simulating && !state.trip.route) {
-          state.trip.route = buildRouteN(state.trip.courierPos, state.trip.destinationPos, 12);
-          state.trip.stepIndex = 0; recalcEta();
+          buildRoadRoute(state.trip.courierPos, state.trip.destinationPos).then((rt) => {
+            state.trip.route = rt; state.trip.stepIndex = 0; recalcEta(); broadcastUpdate();
+          });
         }
         broadcastUpdate();
         bot.sendMessage(chatId, `Simulation ${state.trip.simulating ? '▶️ ON' : '⏸ OFF'}.`);
+        return;
+      case 'clear_leads':
+        state.leads = []; broadcastUpdate();
+        bot.sendMessage(chatId, '🗑 Leads cleared.');
         return;
       case 'show_state':
         sendSnapshot(chatId); return;
@@ -904,7 +1046,13 @@ function sendSnapshot(chatId) {
     `*Uber link:* ${s.trip.uberLink}`,
     `*Courier pos:* ${s.trip.courierPos.lat.toFixed(4)}, ${s.trip.courierPos.lng.toFixed(4)}`,
     `*Destination:* ${s.trip.destinationPos.lat.toFixed(4)}, ${s.trip.destinationPos.lng.toFixed(4)}`,
+    `*Leads:* ${(s.leads || []).length}`,
   ];
+  if (s.leads && s.leads.length) {
+    s.leads.forEach((l, i) => {
+      lines.push(`  ${i+1}. ${l.fullName}${l.location ? ' — ' + (l.locationDisplay || l.location) : ''}${l.branches && l.branches.length ? ` (${l.branches.length} branches)` : ''}`);
+    });
+  }
   bot.sendMessage(chatId, lines.join('\n'), { parse_mode: 'Markdown' });
 }
 
@@ -1012,10 +1160,10 @@ function runDemo(chatId) {
     demoAlert('Your courier is picking up your package from the carrier hub.');
   });
 
-  // +15s: en route — build a short route & start moving
-  demoStep(15000, () => {
+  // +15s: en route — build a road-following route & start moving
+  demoStep(15000, async () => {
     setFlow(3);
-    state.trip.route = buildRouteN(state.trip.courierPos, state.trip.destinationPos, 12);
+    state.trip.route = await buildRoadRoute(state.trip.courierPos, state.trip.destinationPos);
     state.trip.stepIndex = 0;
     state.trip.simulating = true;
     state.trip.etaAuto = true;
@@ -1067,6 +1215,26 @@ function stopSimulation() {
 }
 
 // ---------------- Live simulation engine ----------------
+// Road-following routing via OSRM (free, no API key)
+async function buildRoadRoute(start, end) {
+  const url = `https://routing.openstreetmap.de/routed-car/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson`;
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 10000);
+    const res = await fetch(url, { signal: ctrl.signal });
+    clearTimeout(t);
+    if (!res.ok) throw new Error('OSRM HTTP ' + res.status);
+    const data = await res.json();
+    if (!data.routes || data.routes.length === 0) throw new Error('no route');
+    const coords = data.routes[0].geometry.coordinates; // [[lng,lat],...]
+    const route = coords.map((c) => ({ lat: c[1], lng: c[0] }));
+    return route;
+  } catch (e) {
+    // fall back to straight line if OSRM fails
+    return buildRouteN(start, end, 24);
+  }
+}
+
 function buildRoute(start, end) {
   return buildRouteN(start, end, 24);
 }
