@@ -9,14 +9,47 @@ const TILES = {
   light: 'https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png',
 };
 
-// Car SVG that rotates to face direction of travel
-const CAR_SVG = `<svg viewBox="0 0 32 32" width="36" height="36" xmlns="http://www.w3.org/2000/svg">
-  <defs><filter id="sh" x="-50%" y="-50%" width="200%" height="200%">
-    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.4"/>
-  </filter></defs>
-  <g filter="url(#sh)">
-    <path d="M16 2 L26 28 L16 24 L6 28 Z" fill="var(--car-color, #1FBAD6)" stroke="#fff" stroke-width="1.5"/>
-    <circle cx="16" cy="14" r="3" fill="#fff" opacity="0.8"/>
+// 3D-style top-down car with body gradient, windshield, headlights, glow
+const CAR_SVG = `<svg viewBox="0 0 40 40" width="44" height="44" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="var(--car-color, #1FBAD6)" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="var(--car-color, #1FBAD6)" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="var(--car-color, #1FBAD6)"/>
+      <stop offset="50%" stop-color="var(--car-color, #1FBAD6)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,0.3)"/>
+    </linearGradient>
+    <linearGradient id="windshield" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(180,220,240,0.85)"/>
+      <stop offset="100%" stop-color="rgba(40,60,80,0.7)"/>
+    </linearGradient>
+    <filter id="carShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <!-- Glow halo -->
+  <circle cx="20" cy="20" r="18" fill="url(#glow)"/>
+  <!-- Car body -->
+  <g filter="url(#carShadow)">
+    <path d="M20 5 C24 5 25 7 25 10 L25 14 C28 15 30 17 30 19 L30 24 C30 28 28 31 25 32 L25 34 C25 36 24 36 20 36 C16 36 15 36 15 34 L15 32 C12 31 10 28 10 24 L10 19 C10 17 12 15 15 14 L15 10 C15 7 16 5 20 5 Z" 
+          fill="url(#bodyGrad)" stroke="rgba(255,255,255,0.4)" stroke-width="0.5"/>
+    <!-- Windshield -->
+    <path d="M16 9 L24 9 L23 14 L17 14 Z" fill="url(#windshield)" rx="1"/>
+    <!-- Rear window -->
+    <path d="M17 29 L23 29 L24 33 L16 33 Z" fill="url(#windshield)" opacity="0.5" rx="1"/>
+    <!-- Roof -->
+    <ellipse cx="20" cy="21" rx="4" ry="6" fill="var(--car-color, #1FBAD6)" opacity="0.15"/>
+    <!-- Headlights -->
+    <ellipse cx="16.5" cy="6.5" rx="1.2" ry="0.8" fill="#fff8e0" opacity="0.95"/>
+    <ellipse cx="23.5" cy="6.5" rx="1.2" ry="0.8" fill="#fff8e0" opacity="0.95"/>
+    <!-- Taillights -->
+    <rect x="16" y="34.5" width="2" height="1" rx="0.3" fill="#ff3333" opacity="0.9"/>
+    <rect x="22" y="34.5" width="2" height="1" rx="0.3" fill="#ff3333" opacity="0.9"/>
+    <!-- Side mirrors -->
+    <rect x="13" y="16" width="1.5" height="1" rx="0.3" fill="rgba(255,255,255,0.3)"/>
+    <rect x="25.5" y="16" width="1.5" height="1" rx="0.3" fill="rgba(255,255,255,0.3)"/>
   </g>
 </svg>`;
 
@@ -43,7 +76,7 @@ function initMap() {
   const courierIcon = L.divIcon({
     className: 'courier-car',
     html: `<div class="car-wrap" id="carWrap">${CAR_SVG}</div>`,
-    iconSize: [36, 36], iconAnchor: [18, 18],
+    iconSize: [44, 44], iconAnchor: [22, 22],
   });
   courierMarker = L.marker([37.7749, -122.4194], { icon: courierIcon, zIndexOffset: 1000 }).addTo(map);
 
