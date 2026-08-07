@@ -69,3 +69,5 @@ public/logos/          company logos (SVG placeholders + uploaded)
 
 ## Customizing companies
 Edit `companies.json` to add presets (id, name, logo, primary, accent, theme). The bot can switch between them live; name and logo can also be changed from Telegram.
+
+<!-- redeploy trigger: 2026-08-07T13:58:27.5463009-07:00 -->
