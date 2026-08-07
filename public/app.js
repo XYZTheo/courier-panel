@@ -8,7 +8,19 @@ const TILES = {
 };
 
 function initMap() {
-  map = L.map('map', { zoomControl: true, attributionControl: true }).setView([37.7749, -122.4194], 13);
+  map = L.map('map', {
+    zoomControl: true,
+    attributionControl: true,
+    tap: true,
+    tapTolerance: 15,
+    zoomAnimation: true,
+    fadeAnimation: true,
+    markerZoomAnimation: true,
+    inertia: false,
+  }).setView([37.7749, -122.4194], 13);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+  // Remove default top-left zoom on mobile (it overlaps ETA badge)
+  map.zoomControl.remove();
   tileLayer = L.tileLayer(TILES.dark, {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap &copy; CARTO',
